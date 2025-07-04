@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sundos - AI Assistant</title>
+    <!-- Favicon - Added for brand recognition -->
+    <link rel="icon" type="image/png" href="https://placehold.co/32x32/D64F7B/FFFFFF/png?text=✨">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Custom Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <!-- New Arabic Font: Cairo for a modern look -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Base styles, now without a background image */
+        body {
+            font-family: 'Inter', sans-serif; /* Default font */
+            background-color: #f9f9f9; /* A light, neutral background color */
+            min-height: 100vh; /* Ensure full viewport height */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px; /* Default padding for larger screens */
+            color: #4A4A4A; /* Slightly darker default text for contrast */
+        }
+
+        .playfair-display {
+            font-family: 'Playfair Display', serif; /* Decorative font for titles */
+        }
+
+        /* Arabic font for the name Sundos and the quote */
+        .arabic-name {
+            font-family: 'Cairo', 'Amiri', serif; /* Elegant Arabic font, Cairo as primary */
+            direction: rtl; /* Right-to-left direction for Arabic */
+            color: #D64F7B; /* Adjusted pink for better contrast and elegance */
+        }
+
+        .arabic-quote {
+            font-family: 'Cairo', 'Amiri', serif; /* Elegant Arabic font, Cairo as primary */
+            direction: rtl; /* Right-to-left direction for Arabic */
+            color: #6C3483; /* Adjusted purple for better contrast and richness */
+            font-weight: 600; /* Keep it semi-bold for emphasis */
+        }
+
+        /* Apply Cairo to Arabic headings within sections */
+        .feature-section h2 {
+            font-family: 'Cairo', 'Playfair Display', serif; /* Apply Cairo to headings in sections */
+            font-size: 2rem; /* Default size for h2, equivalent to text-2xl */
+        }
+
+        /* The subtle geometric pattern overlay is now for a *secondary* subtle texture,
+           and its background color will help blend with the new image's tones. */
+        .pattern-background {
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000000' fill-opacity='0.03' fill-rule='evenodd'%3E%3Cpath d='M0 0h30v30H0V0zm30 30h30v30H30V30z'/%3E%3C/g%3E%3C/svg%3E");
+            background-repeat: repeat;
+            opacity: 0.15; /* Even more subtle now */
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            /* Add a semi-transparent overlay color that complements the border design */
+            background-color: rgba(240, 235, 220, 0.4); /* A light, warm beige overlay to enhance the image's color */
+        }
+
+        /* Adjusting main content box opacity for better readability over the new background */
+        .main-content-box {
+            background-color: rgba(255, 255, 255, 0.95); /* Slightly less transparent */
+            /* Using a border color that complements the gold tones of the background image */
+            border: 1px solid rgba(212, 184, 140, 0.6);
+        }
+
+        .tab-button.active {
+            background-color: #6d28d9; /* Corresponds to Tailwind's bg-purple-600 */
+            color: #ffffff;           /* Corresponds to Tailwind's text-white */
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #D64F7B;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Chat specific styles */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 400px; /* Fixed height for chat history */
+            border: 1px solid #e0e0e0;
+            border-radius: 0.5rem;
+            overflow-y: auto;
+            padding: 1rem;
+            background-color: #f9f9f9;
+            margin-bottom: 1rem;
+        }
+
+        .chat-message {
+            margin-bottom: 0.75rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            max-width: 80%; /* Default max-width for desktop */
+            font-size: 1.05rem; /* Increased chat text size */
+        }
+
+        .chat-message.user {
+            background-color: #e0f2f7; /* Light blue for user messages */
+            align-self: flex-end;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .chat-message.ai {
+            background-color: #f0f0f0; /* Light gray for AI messages */
+            align-self: flex-start;
+            margin-right: auto;
+            text-align: left;
+        }
+
+        .chat-input-area {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            width: 100;
+            flex-wrap: wrap; /* Allow items to wrap on larger screens if needed */
+        }
+
+        /* Mobile-specific adjustments */
+        @media (max-width: 768px) {
+            body {
+                padding: 0px; /* Remove overall body padding on small screens */
+            }
+
+            .main-content-box {
+                padding: 0rem; /* Remove padding inside the main content box on small screens */
+                border-radius: 0; /* Remove rounded corners on very small screens for full width look */
+                box-shadow: none; /* Remove shadow on very small screens */
+            }
+
+            .feature-section {
+                padding: 0.25rem 0px; /* Reduced vertical padding, removed horizontal for full width */
+                border-radius: 0; /* Remove rounded corners for full width */
+                width: 100%; /* Ensure feature section takes full width */
+            }
+
+            .arabic-name {
+                font-size: 3rem; /* Adjust font size for smaller screens */
+            }
+
+            .arabic-quote {
+                font-size: 1.3rem; /* Adjust font size for smaller screens */
+            }
+
+            .tab-button {
+                font-size: 0.85rem; /* Smaller font for tab buttons */
+                padding: 0.6rem 1rem; /* Adjust padding for tab buttons */
+            }
+
+            /* Adjusted chat input area for mobile to be on one row */
+            .chat-input-area {
+                flex-direction: row; /* Keep items in a row */
+                align-items: center; /* Vertically align items */
+                justify-content: space-between; /* Distribute space */
+                gap: 0.5rem; /* Maintain small gap */
+                flex-wrap: nowrap; /* Prevent wrapping if possible, allow horizontal scroll if needed */
+                width: 100%; /* Ensure input area takes full width */
+                padding: 0 0.5rem; /* Add some horizontal padding to the input area itself */
+            }
+
+            .chat-input-area input[type="text"] {
+                flex-grow: 1; /* Allow input to grow and take available space */
+                width: auto; /* Override 100% width from previous rule */
+                min-width: 100px; /* Ensure a minimum width for the input */
+            }
+
+            .chat-input-area label,
+            .chat-input-area button {
+                width: auto; /* Auto width for buttons/labels */
+                flex-shrink: 0; /* Prevent buttons from shrinking */
+                padding: 0.6rem; /* Slightly adjust padding for smaller circular buttons */
+            }
+
+            .chat-message {
+                max-width: 100%; /* Allow chat messages to take full width of container on mobile */
+                font-size: 0.8rem; /* Further reduced chat text size for mobile */
+                padding: 0.5rem 0.75rem; /* Adjust message padding for smaller text */
+            }
+
+            .chat-container {
+                height: 300px; /* Reduce chat history height on mobile for more screen space */
+                width: 100%; /* Ensure chat container takes full width on mobile */
+                padding: 0.75rem; /* Reduce padding inside chat container on mobile */
+            }
+
+            .feature-section h2 {
+                font-size: 1.5rem; /* Smaller h2 font size on mobile */
+                padding: 0.5rem 0.75rem; /* Add some padding to the heading */
+            }
+        }
+
+        /* Further adjustments for very small mobile screens (e.g., iPhone SE) */
+        @media (max-width: 480px) {
+            .arabic-name {
+                font-size: 2.5rem; /* Even smaller font size for very small screens */
+            }
+
+            .arabic-quote {
+                font-size: 1.1rem; /* Even smaller font size for very small screens */
+            }
+
+            .tab-button {
+                font-size: 0.75rem; /* Smallest font for tab buttons */
+                padding: 0.5rem 0.8rem; /* Further adjust padding */
+            }
+
+            .feature-section h2 {
+                font-size: 1.3rem; /* Even smaller h2 font size on very small mobile */
+            }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+    <!-- Subtle pattern overlay -->
+    <div class="pattern-background"></div>
+
+    <div class="max-w-7xl w-full shadow-2xl rounded-xl p-8 md:p-12 lg:p-16 text-center relative z-10 main-content-box">
+
+        <!-- Header Section -->
+        <header class="mb-10">
+            <h1 class="playfair-display text-4xl md:text-5xl font-bold drop-shadow-lg arabic-name text-center mb-4">
+                ✨ سندس ✨
+            </h1>
+            <p class="text-xl md:text-2xl text-gray-700 leading-relaxed text-center">
+                <span class="arabic-quote text-xl md:text-2xl block mb-2">
+                    "في كل حبة رمل قصة؛ وفي كل قطرة ماء حكمة. 💖"
+                </span>
+                <span class="block text-gray-700">
+                    "In every grain of sand, a story; in every drop of water, wisdom."
+                </span>
+            </p>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="space-y-8">
+            <!-- Feature Tabs -->
+            <div class="flex justify-center mb-8">
+                <button id="creativeWritingTab" class="tab-button px-6 py-3 rounded-l-lg font-semibold text-base transition-colors duration-300 bg-purple-500 text-white shadow-md hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50">
+                    ✍️ 📚 كتابة إبداعية
+                </button>
+                <button id="fashionStyleTab" class="tab-button px-6 py-3 rounded-r-lg font-semibold text-base transition-colors duration-300 bg-purple-100 text-purple-800 shadow-md hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50">
+                    💅 👗 موضة وأناقة
+                </button>
+            </div>
+
+            <!-- Creative Writing Section -->
+            <section id="creativeWritingSection" class="feature-section bg-teal-50 bg-opacity-70 rounded-lg p-6 shadow-inner border border-teal-100 space-y-4">
+                <h2 class="playfair-display text-3xl font-semibold text-teal-700 mb-4">
+                    مساعد الكتابة الإبداعية ورواية القصص
+                </h2>
+                <div id="creativeWritingChatHistory" class="chat-container">
+                    <!-- Chat messages will be appended here -->
+                    <div class="chat-message ai" dir="rtl">مرحباً سندس! أنا مساعدتك في الكتابة الإبداعية. أخبريني عن أفكارك أو حمّلي صورة للبدء!</div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="file" id="creativeWritingImage" accept="image/*" class="hidden">
+                    <label for="creativeWritingImage" class="cursor-pointer bg-teal-200 text-teal-800 p-3 rounded-full hover:bg-teal-300 transition-colors duration-300" title="Upload Image">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                    </label>
+                    <!-- Image preview container for Creative Writing -->
+                    <div id="creativeWritingImagePreview" class="hidden w-16 h-16 rounded-md overflow-hidden border border-gray-300 flex-shrink-0">
+                        <img src="" alt="Image Preview" class="object-cover w-full h-full">
+                    </div>
+                    <input type="text" id="creativeWritingPrompt" class="flex-grow p-3 border border-teal-300 rounded-md focus:ring-2 focus:ring-teal-400 focus:border-transparent" placeholder="اكتبي رسالتك هنا..." dir="rtl">
+                    <button id="sendCreativeContentBtn" class="bg-teal-600 text-white p-3 rounded-full hover:bg-teal-700 transition-colors duration-300 shadow-md flex items-center justify-center">
+                        <span id="creativeWritingLoader" class="loader hidden mr-2"></span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Fashion & Style Section -->
+            <section id="fashionStyleSection" class="feature-section hidden bg-blue-50 bg-opacity-70 rounded-lg p-6 shadow-inner border border-blue-100 space-y-4">
+                <h2 class="playfair-display text-3xl font-semibold text-blue-700 mb-4">
+                    مستكشف الموضة والأناقة
+                </h2>
+                <div id="fashionStyleChatHistory" class="chat-container">
+                    <!-- Chat messages will be appended here -->
+                    <div class="chat-message ai" dir="rtl">مرحباً سندس! أنا مساعدتك الشخصية في الموضة والأناقة. ما هي المناسبة (خاصة، منزل، عمل)؟ صفي قطعة ملابس أو حمّلي صورة للحصول على نصائح التنسيق.</div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="file" id="fashionStyleImage" accept="image/*" class="hidden">
+                    <label for="fashionStyleImage" class="cursor-pointer bg-blue-200 text-blue-800 p-3 rounded-full hover:bg-blue-300 transition-colors duration-300" title="Upload Image">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                    </label>
+                    <!-- Image preview container for Fashion & Style -->
+                    <div id="fashionStyleImagePreview" class="hidden w-16 h-16 rounded-md overflow-hidden border border-gray-300 flex-shrink-0">
+                        <img src="" alt="Image Preview" class="object-cover w-full h-full">
+                    </div>
+                    <input type="text" id="fashionStylePrompt" class="flex-grow p-3 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:border-transparent" placeholder="اكتبي رسالتك هنا..." dir="rtl">
+                    <button id="sendFashionContentBtn" class="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 transition-colors duration-300 shadow-md flex items-center justify-center">
+                        <span id="fashionStyleLoader" class="loader hidden mr-2"></span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer Section -->
+        <footer class="mt-10 text-sm text-gray-600">
+            <p class="italic">&copy; 2025 Muhammad Faris</p>
+        </footer>
+    </div>
+
+    <script>
+        // --- API Configuration ---
+        // IMPORTANT: Leave apiKey as an empty string. Canvas will automatically provide it at runtime.
+        const API_KEY = "AIzaSyCYJZ6wEt6Db2PHSaTbJAaWOT9pXtXZtuQ"; // Keep this empty, Canvas will inject the key
+        const CREATIVE_MODEL = "gemini-2.0-flash"; // Good for text and image understanding
+        const FASHION_TEXT_MODEL = "gemini-2.0-flash"; // Good for text and image understanding
+        const FASHION_IMAGE_MODEL = "imagen-3.0-generate-002"; // For generating images based on prompts
+
+        // --- DOM Elements ---
+        const creativeWritingTab = document.getElementById('creativeWritingTab');
+        const fashionStyleTab = document.getElementById('fashionStyleTab');
+        const creativeWritingSection = document.getElementById('creativeWritingSection');
+        const fashionStyleSection = document.getElementById('fashionStyleSection');
+
+        const creativeWritingPromptInput = document.getElementById('creativeWritingPrompt');
+        const creativeWritingImageInput = document.getElementById('creativeWritingImage');
+        const sendCreativeContentBtn = document.getElementById('sendCreativeContentBtn');
+        const creativeWritingChatHistory = document.getElementById('creativeWritingChatHistory');
+        const creativeWritingLoader = document.getElementById('creativeWritingLoader');
+        const creativeWritingImagePreview = document.getElementById('creativeWritingImagePreview');
+
+        const fashionStylePromptInput = document.getElementById('fashionStylePrompt');
+        const fashionStyleImageInput = document.getElementById('fashionStyleImage');
+        const sendFashionContentBtn = document.getElementById('sendFashionContentBtn');
+        const fashionStyleChatHistory = document.getElementById('fashionStyleChatHistory');
+        const fashionStyleLoader = document.getElementById('fashionStyleLoader');
+        const fashionStyleImagePreview = document.getElementById('fashionStyleImagePreview');
+
+        // --- Chat History Storage (for multi-turn conversation) ---
+        // Initial messages with Sundos persona
+        let creativeChatHistory = [{ role: "model", parts: [{ text: "مرحباً سندس! أنا مساعدتك في الكتابة الإبداعية. أخبريني عن أفكارك أو حمّلي صورة للبدء!" }] }];
+        let fashionChatHistory = [{ role: "model", parts: [{ text: "مرحباً سندس! أنا مساعدتك الشخصية في الموضة والأناقة. ما هي المناسبة (خاصة، منزل، عمل)؟ صفي قطعة ملابس أو حمّلي صورة للحصول على نصائح التنسيق." }] }];
+
+        // --- Utility Functions ---
+
+        /**
+         * Converts a File object to a Base64 encoded string.
+         * @param {File} file - The file to convert.
+         * @returns {Promise<string>} A promise that resolves with the Base64 string.
+         */
+        async function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    resolve(reader.result.split(',')[1]); // Extract only the Base64 data part
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        /**
+         * Appends a message to the chat history display.
+         * @param {HTMLElement} chatHistoryElement - The chat history container.
+         * @param {string} role - 'user' or 'ai'.
+         * @param {string} text - The message text.
+         * @param {string|null} imageUrl - Optional image URL for AI responses.
+         */
+        function appendMessage(chatHistoryElement, role, text, imageUrl = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('chat-message', role);
+            messageDiv.setAttribute('dir', 'rtl'); // Set direction for Arabic text
+            messageDiv.innerHTML = `<p>${text}</p>`;
+            if (imageUrl) {
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                img.alt = role === 'user' ? 'User uploaded image' : 'Generated image';
+                img.classList.add('mt-2', 'max-w-full', 'h-auto', 'rounded-md', 'shadow-md');
+                messageDiv.appendChild(img);
+            }
+            chatHistoryElement.appendChild(messageDiv);
+            chatHistoryElement.scrollTop = chatHistoryElement.scrollHeight; // Scroll to bottom
+        }
+
+        /**
+         * Sets the loading state for a button and loader.
+         * @param {HTMLButtonElement} button - The button element.
+         * @param {HTMLElement} loader - The loader element.
+         * @param {boolean} isLoading - True to show loading, false to hide.
+         */
+        function setLoading(button, loader, isLoading) {
+            if (isLoading) {
+                button.disabled = true;
+                loader.classList.remove('hidden');
+                button.classList.add('cursor-not-allowed', 'opacity-75');
+            } else {
+                button.disabled = false;
+                loader.classList.add('hidden');
+                button.classList.remove('cursor-not-allowed', 'opacity-75');
+            }
+        }
+
+        /**
+         * Handles displaying a preview of the selected image.
+         * @param {HTMLInputElement} imageInput - The file input element.
+         * @param {HTMLElement} previewElement - The div to display the preview in.
+         */
+        function handleImagePreview(imageInput, previewElement) {
+            const file = imageInput.files[0];
+            const imgElement = previewElement.querySelector('img');
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imgElement.src = e.target.result;
+                    previewElement.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                imgElement.src = '';
+                previewElement.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Simulates fetching weather data for Istanbul.
+         * In a real application, you would use a weather API here.
+         * @returns {Promise<{temperature: number, condition: string}>}
+         */
+        async function getIstanbulWeather() {
+            // Placeholder for a real API call (e.g., OpenWeatherMap, WeatherAPI.com)
+            // For demonstration, return static data
+            const temperatures = [20, 25, 15, 10, 30]; // Example temperatures
+            const conditions = ["مشمس ☀️", "غائم ☁️", "ممطر 🌧️", "بارد ❄️", "حار 🔥"]; // Example conditions
+            const randomTemp = temperatures[Math.floor(Math.random() * temperatures.length)];
+            const randomCondition = conditions[Math.floor(Math.random() * conditions.length)];
+
+            return {
+                temperature: randomTemp,
+                condition: randomCondition
+            };
+        }
+
+
+        // --- API Call Functions ---
+
+        /**
+         * Calls the Gemini API for text and image understanding.
+         * @param {Array<Object>} currentChatHistory - The current chat history array.
+         * @param {string} modelName - The Gemini model to use.
+         * @returns {Promise<string>} The generated text.
+         */
+        async function callGeminiTextModel(currentChatHistory, modelName) {
+            // The system instruction is now prepended to the user's prompt in sendMessage,
+            // so we pass currentChatHistory directly as the contents.
+            const payload = { contents: currentChatHistory };
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${API_KEY}`;
+
+            try {
+                console.log("Sending request to Gemini API:", JSON.stringify(payload)); // Log outgoing payload
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                console.log("Received response status:", response.status, response.statusText); // Log response status
+
+                if (!response.ok) {
+                    const errorText = await response.text(); // Read as text for debugging
+                    console.error("API non-OK response body:", errorText);
+                    let errorData = {};
+                    try {
+                        errorData = JSON.parse(errorText); // Try to parse if it's JSON
+                    } catch (e) {
+                        // Not JSON, use raw text
+                    }
+                    throw new Error(`API error: ${response.status} ${response.statusText} - ${errorData.error?.message || errorText || 'Unknown error'}`);
+                }
+
+                let result;
+                try {
+                    result = await response.json(); // This is where SyntaxError happens
+                } catch (e) {
+                    if (e instanceof SyntaxError) {
+                        const rawResponseText = await response.text(); // Get raw text to see what was unparseable
+                        console.error("SyntaxError parsing JSON. Raw response:", rawResponseText);
+                        throw new Error(`Invalid JSON response from API. Raw: "${rawResponseText.substring(0, 200)}..."`);
+                    }
+                    throw e; // Re-throw other errors
+                }
+
+                console.log("Received API result:", result); // Log full API result
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    return result.candidates[0].content.parts[0].text;
+                } else {
+                    throw new Error("No content found in the API response.");
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                throw error;
+            }
+        }
+
+        /**
+         * Calls the Imagen API for image generation.
+         * @param {string} promptText - The text prompt for image generation.
+         * @returns {Promise<string>} The Base64 encoded image URL.
+         */
+        async function callImagenModel(promptText) {
+            const payload = { instances: { prompt: promptText }, parameters: { "sampleCount": 1 } };
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${FASHION_IMAGE_MODEL}:predict?key=${API_KEY}`;
+
+            try {
+                console.log("Sending request to Imagen API:", JSON.stringify(payload)); // Log outgoing payload
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                console.log("Received Imagen response status:", response.status, response.statusText); // Log response status
+
+                if (!response.ok) {
+                    const errorText = await response.text(); // Read as text for debugging
+                    console.error("Imagen API non-OK response body:", errorText);
+                    let errorData = {};
+                    try {
+                        errorData = JSON.parse(errorText); // Try to parse if it's JSON
+                    } catch (e) {
+                        // Not JSON, use raw text
+                    }
+                    throw new Error(`Imagen API error: ${response.status} ${response.statusText} - ${errorData.error?.message || errorText || 'Unknown error'}`);
+                }
+
+                let result;
+                try {
+                    result = await response.json(); // This is where SyntaxError happens
+                } catch (e) {
+                    if (e instanceof SyntaxError) {
+                        const rawResponseText = await response.text(); // Get raw text to see what was unparseable
+                        console.error("SyntaxError parsing Imagen JSON. Raw response:", rawResponseText);
+                        throw new Error(`Invalid JSON response from Imagen API. Raw: "${rawResponseText.substring(0, 200)}..."`);
+                    }
+                    throw e; // Re-throw other errors
+                }
+
+                console.log("Received API result:", result); // Log full API result
+
+                if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
+                    return `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+                } else {
+                    throw new Error("No image data found in the Imagen API response.");
+                }
+            } catch (error) {
+                console.error("Error calling Imagen API:", error);
+                throw error;
+            }
+        }
+
+        // --- Unified Send Message Function ---
+        async function sendMessage(promptInput, imageInput, chatHistoryElement, loaderElement, sendButton, currentChatHistory, modelType) {
+            const prompt = promptInput.value.trim();
+            const imageFile = imageInput.files[0];
+            const currentImagePreviewElement = (modelType === 'creative' ? creativeWritingImagePreview : fashionStyleImagePreview);
+
+            if (!prompt && !imageFile) {
+                appendMessage(chatHistoryElement, 'ai', "الرجاء إدخال رسالة أو تحميل صورة للمتابعة.");
+                return;
+            }
+
+            setLoading(sendButton, loaderElement, true);
+            promptInput.value = ''; // Clear input field
+
+
+            let userParts = [];
+            let base64Image = null;
+            let mimeType = ''; // Declare mimeType here
+
+            if (imageFile) {
+                try {
+                    base64Image = await fileToBase64(imageFile);
+                    mimeType = imageFile.type; // Get mimeType from the file object
+                    userParts.push({
+                        inlineData: {
+                            mimeType: mimeType, // Use the actual mimeType
+                            data: base64Image
+                        }
+                    });
+                    // Only append text if prompt is not empty, otherwise just image
+                    if (prompt) {
+                        userParts.unshift({ text: prompt });
+                    }
+                    appendMessage(chatHistoryElement, 'user', prompt, `data:${mimeType};base64,${base64Image}`);
+                } catch (error) {
+                    console.error("Error in fileToBase64:", error); // Log specific error for base64 conversion
+                    appendMessage(chatHistoryElement, 'ai', `خطأ في معالجة الصورة: ${error.message}`);
+                    setLoading(sendButton, loaderElement, false);
+                    return;
+                }
+            } else {
+                userParts.push({ text: prompt });
+                appendMessage(chatHistoryElement, 'user', prompt);
+            }
+
+            let effectivePrompt = prompt; // This will be the actual prompt sent to the model
+
+            let systemInstruction = "";
+            if (modelType === 'creative') {
+                systemInstruction = "أنت مساعد سندس في الكتابة الإبداعية. أشيري إلى نفسك دائماً كـ 'مساعد سندس'. قدمي الردود في فقرات واضحة وموجزة. لا تستخدمي النقاط أو الرموز الخاصة مثل النجوم (*) أو الشرطات (-) أو القوائم المرقمة. كوني ملهمة وودودة.";
+            } else if (modelType === 'fashion') {
+                let weather = { temperature: 'غير معروف', condition: 'غير معروف' };
+                try {
+                    weather = await getIstanbulWeather();
+                } catch (error) {
+                    console.warn("Could not fetch Istanbul weather:", error);
+                    // Continue without weather if fetching fails
+                }
+
+                let occasionPrompt = "";
+                const lowerCasePrompt = prompt.toLowerCase();
+                if (lowerCasePrompt.includes("خاصة") || lowerCasePrompt.includes("مناسبة خاصة") || lowerCasePrompt.includes("حفلة")) {
+                    occasionPrompt = "لمناسبة خاصة.";
+                } else if (lowerCasePrompt.includes("منزل") || lowerCasePrompt.includes("في البيت") || lowerCasePrompt.includes("مريحة")) {
+                    occasionPrompt = "للبقاء في المنزل.";
+                } else if (lowerCasePrompt.includes("عمل") || lowerCasePrompt.includes("دوام") || lowerCasePrompt.includes("اجتماع")) {
+                    occasionPrompt = "للعمل.";
+                } else {
+                    occasionPrompt = "لأي مناسبة."; // Default if occasion not specified
+                }
+
+                systemInstruction = `أنت مساعد سندس في الموضة والأناقة. أشيري إلى نفسك دائماً كـ 'مساعد سندس'. قدمي نصائح الموضة في فقرة واحدة لا تتجاوز 3 أسطر. لا تستخدمي النقاط أو الرموز الخاصة مثل النجوم (*) أو الشرطات (-) أو القوائم المرقمة. الطقس الحالي في اسطنبول هو ${weather.temperature}°C و ${weather.condition}. قدمي اقتراحاتك ${occasionPrompt} بناءً على الطقس والمناسبة المذكورة.`;
+            }
+
+            // Prepend the system instruction to the actual user prompt for the API call
+            // This ensures the instruction is part of the user's message, not a separate system role.
+            // Only apply if it's the very first user message after the initial model greeting.
+            if (systemInstruction && currentChatHistory.length === 1 && currentChatHistory[0].role === 'model') {
+                // If the user's prompt already has a text part, prepend to it.
+                // Otherwise, create a new text part and prepend.
+                if (userParts.length > 0 && userParts[0].text !== undefined) {
+                    userParts[0].text = systemInstruction + userParts[0].text;
+                } else {
+                    // This case handles when the first user message is *only* an image.
+                    // We still need to send the system instruction, so we add a text part.
+                    userParts.unshift({ text: systemInstruction });
+                }
+            }
+
+            // Add user message to chat history for API call
+            currentChatHistory.push({ role: "user", parts: userParts });
+
+            try {
+                let aiResponseText = "";
+                if (modelType === 'creative') {
+                    // Pass currentChatHistory directly; systemInstruction is now part of the user's prompt
+                    aiResponseText = await callGeminiTextModel(currentChatHistory, CREATIVE_MODEL);
+                } else if (modelType === 'fashion') {
+                    // Pass currentChatHistory directly; systemInstruction is now part of the user's prompt
+                    aiResponseText = await callGeminiTextModel(currentChatHistory, FASHION_TEXT_MODEL);
+
+                    // For fashion, if only text was provided, offer image generation
+                    if (!imageFile && prompt) {
+                        const generateImagePrompt = "Generate an image based on the following fashion suggestion: " + aiResponseText.substring(0, Math.min(aiResponseText.length, 100)) + "..."; // Truncate for prompt
+                        const confirmImageGenButton = document.createElement('button');
+                        confirmImageGenButton.textContent = 'إنشاء صورة لهذا النمط';
+                        confirmImageGenButton.className = 'mt-4 bg-purple-500 text-white py-2 px-4 rounded-md hover:bg-purple-600 transition-colors duration-300 shadow-md';
+                        confirmImageGenButton.onclick = async () => {
+                            setLoading(sendButton, loaderElement, true);
+                            appendMessage(chatHistoryElement, 'ai', "جاري إنشاء الصورة...", null); // Indicate image generation
+                            try {
+                                const imageUrl = await callImagenModel(generateImagePrompt);
+                                appendMessage(chatHistoryElement, 'ai', "إليك إلهام بصري:", imageUrl);
+                            } catch (imgError) {
+                                appendMessage(chatHistoryElement, 'ai', `خطأ في إنشاء الصورة: ${imgError.message}`);
+                            } finally {
+                                setLoading(sendButton, loaderElement, false);
+                            }
+                        };
+                        appendMessage(chatHistoryElement, 'ai', aiResponseText); // First add text response
+                        chatHistoryElement.lastChild.appendChild(confirmImageGenButton); // Then append button to last message
+                        currentChatHistory.push({ role: "model", parts: [{ text: aiResponseText }] }); // Add text to history
+                        return; // Exit to prevent double appending AI message
+                    }
+                }
+
+                appendMessage(chatHistoryElement, 'ai', aiResponseText);
+                currentChatHistory.push({ role: "model", parts: [{ text: aiResponseText }] });
+
+            } catch (error) {
+                appendMessage(chatHistoryElement, 'ai', `خطأ: ${error.message}`);
+            } finally {
+                setLoading(sendButton, loaderElement, false);
+                imageInput.value = ''; // Clear image input
+                handleImagePreview(imageInput, currentImagePreviewElement); // Clear preview after sending
+            }
+        }
+
+        // --- Event Listeners for Send Buttons ---
+        sendCreativeContentBtn.addEventListener('click', () => {
+            sendMessage(creativeWritingPromptInput, creativeWritingImageInput, creativeWritingChatHistory, creativeWritingLoader, sendCreativeContentBtn, creativeChatHistory, 'creative');
+        });
+        creativeWritingPromptInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) { // Send on Enter, allow Shift+Enter for new line
+                e.preventDefault();
+                sendMessage(creativeWritingPromptInput, creativeWritingImageInput, creativeWritingChatHistory, creativeWritingLoader, sendCreativeContentBtn, creativeChatHistory, 'creative');
+            }
+        });
+
+        // Event listeners for image input changes to show preview
+        creativeWritingImageInput.addEventListener('change', () => {
+            handleImagePreview(creativeWritingImageInput, creativeWritingImagePreview);
+        });
+
+        sendFashionContentBtn.addEventListener('click', () => {
+            sendMessage(fashionStylePromptInput, fashionStyleImageInput, fashionStyleChatHistory, fashionStyleLoader, sendFashionContentBtn, fashionChatHistory, 'fashion');
+        });
+        fashionStylePromptInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) { // Send on Enter, allow Shift+Enter for new line
+                e.preventDefault();
+                sendMessage(fashionStylePromptInput, fashionStyleImageInput, fashionStyleChatHistory, fashionStyleLoader, sendFashionContentBtn, fashionChatHistory, 'fashion');
+            }
+        });
+
+        // Event listeners for image input changes to show preview
+        fashionStyleImageInput.addEventListener('change', () => {
+            handleImagePreview(fashionStyleImageInput, fashionStyleImagePreview);
+        });
+
+
+        // --- Tab Switching Logic ---
+        function showSection(sectionId) {
+            const sections = document.querySelectorAll('.feature-section');
+            sections.forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(sectionId).classList.remove('hidden');
+
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => {
+                button.classList.remove('active', 'bg-purple-600', 'text-white');
+                button.classList.add('bg-purple-100', 'text-purple-800');
+            });
+
+            if (sectionId === 'creativeWritingSection') {
+                creativeWritingTab.classList.add('active', 'bg-purple-600', 'text-white');
+                creativeWritingTab.classList.remove('bg-purple-100', 'text-purple-800');
+            } else if (sectionId === 'fashionStyleSection') {
+                fashionStyleTab.classList.add('active', 'bg-purple-600', 'text-white');
+                fashionStyleTab.classList.remove('bg-purple-100', 'text-purple-800');
+            }
+        }
+
+        creativeWritingTab.addEventListener('click', () => showSection('creativeWritingSection'));
+        fashionStyleTab.addEventListener('click', () => showSection('fashionStyleSection'));
+
+        // Initial load: show Creative Writing section
+        document.addEventListener('DOMContentLoaded', () => {
+            showSection('creativeWritingSection');
+        });
+    </script>
+</body>
+</html>
